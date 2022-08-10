@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= current %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+</head>
+
+<body class="d-flex flex-column container justify-content-center vh-100">
+
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+        <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+        </symbol>
+        <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z" />
+        </symbol>
+        <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+            <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </symbol>
+    </svg>
+    <div id="alert" class=" d-none alert alert-success alert-dismissible fade show col-12 col-md-6 align-self-center"
+        role="alert">
+        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:">
+            <use xlink:href="#check-circle-fill" />
+        </svg>
+
+        connected
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+
+    </div>
+    <div id="inside"
+        class="d-flex flex-column align-self-center border border-3 border-dark rounded-3 col-12 col-md-6 h-50 p-2"
+        style="overflow-y: scroll">
+
+    </div>
+    <div class="input-group d-none d-md-flex w-50 col-12 col-md-6 align-self-center ">
+        <input type="text" class="form-control" placeholder="write a message..."
+            aria-label="Example text with button addon" aria-describedby="button-addon1">
+        <button class="btn btn-outline-secondary" type="button" id="button-send">send</button>
+
+    </div>
+    <div class="input-group d-md-none  w-100 col-12 col-md-6 align-self-center ">
+        <input type="text" class="form-control" placeholder="write a message..."
+            aria-label="Example text with button addon" aria-describedby="button-addon1">
+        <button class="btn btn-outline-secondary" id="button-send-mobile">send</button>
+
+    </div>
+
+</body>
+<script>
+    const current = `<%- current%>`;
+    const token = `<%- token%>`;
+
+</script>
+<script>
+
+    const socket = new WebSocket('ws://192.168.1.101:3000/' + current + '/' + token);
+
+    // Connection opened
+    socket.addEventListener('open', function (event) {
+        document.querySelector('#alert').classList.toggle('d-none')
+    });
+    const element = document.querySelector("#button-send");
+
+    element.addEventListener("click", (e) => {
+        if (document.querySelector("input").value.trim() != "") {
+            socket.send(document.querySelector("input").value)
+            document.querySelectorAll("input")[0].value = ""
+            document.querySelectorAll("input")[1].value = ""
+        }
+    })
+    const elementMobile = document.querySelector("#button-send-mobile");
+
+    elementMobile.addEventListener("click", (e) => {
+        if (document.querySelectorAll("input")[1].value.trim() != "") {
+            socket.send(document.querySelectorAll("input")[1].value)
+            document.querySelectorAll("input")[0].value = ""
+            document.querySelectorAll("input")[1].value = ""
+        }
+    })
+
+    // Listen for messages
+    socket.addEventListener('message', function (event) {
+        const data = JSON.parse(event.data);
+        if (data.operation.toString() == "added") {
+            if ((data.sender.toString()).localeCompare(current.toString()) == 0) {
+                const p = document.createElement("p");
+                p.classList.add("text-muted")
+                p.classList.add(`${data.docId}`)
+                p.innerText = data.sender.toString()
+                const h1FirstLeft = document.createElement("h1");
+                h1FirstLeft.classList.add("d-none")
+                h1FirstLeft.classList.add("d-md-block")
+                h1FirstLeft.classList.add("w-50")
+                h1FirstLeft.classList.add("text-break")
+                h1FirstLeft.classList.add(`${data.docId}`)
+                h1FirstLeft.style.setProperty("background-color", "#BCFFB9")
+                h1FirstLeft.style.setProperty("border", "1px solid black")
+                h1FirstLeft.style.setProperty("border-radius", "1em")
+                h1FirstLeft.style.setProperty("padding", "10px")
+                h1FirstLeft.style.setProperty("font-size", "1rem")
+                h1FirstLeft.innerText = data.body.toString()
+                document.querySelector("#inside").appendChild(p)
+                document.querySelector("#inside").appendChild(h1FirstLeft)
+                const h1SecondLeft = document.createElement("h1");
+                h1SecondLeft.classList.add("d-block")
+                h1SecondLeft.classList.add("d-md-none")
+                h1SecondLeft.classList.add("w-75")
+                h1SecondLeft.classList.add("text-break")
+                h1SecondLeft.classList.add(`${data.docId}`)
+                h1SecondLeft.style.setProperty("background-color", "#BCFFB9")
+                h1SecondLeft.style.setProperty("border", "1px solid black")
+                h1SecondLeft.style.setProperty("border-radius", "1em")
+                h1SecondLeft.style.setProperty("padding", "10px")
+                h1SecondLeft.style.setProperty("font-size", "1rem")
+                h1SecondLeft.innerText = data.body.toString()
+
+                document.querySelector("#inside").appendChild(h1SecondLeft)
+            }
+            else {
+                const p = document.createElement("p");
+                p.classList.add("text-muted")
+                p.innerText = data.sender.toString()
+                p.classList.add("align-self-end")
+                p.classList.add(`${data.docId}`)
+                const h1FirstRight = document.createElement("h1");
+                h1FirstRight.classList.add("d-none")
+                h1FirstRight.classList.add("d-md-block")
+                h1FirstRight.classList.add("w-50")
+                h1FirstRight.classList.add("text-break")
+                h1FirstRight.classList.add("align-self-end")
+                h1FirstRight.classList.add(`${data.docId}`)
+                h1FirstRight.style.setProperty("background-color", "#EEEEEE")
+                h1FirstRight.style.setProperty("border", "1px solid black")
+                h1FirstRight.style.setProperty("border-radius", "1em")
+                h1FirstRight.style.setProperty("padding", "10px")
+                h1FirstRight.style.setProperty("font-size", "1rem")
+                h1FirstRight.innerText = data.body.toString()
+                document.querySelector("#inside").appendChild(p)
+                document.querySelector("#inside").appendChild(h1FirstRight)
+                const h1SecondRight = document.createElement("h1");
+                h1SecondRight.classList.add("d-block")
+                h1SecondRight.classList.add("d-md-none")
+                h1SecondRight.classList.add("w-75")
+                h1SecondRight.classList.add("text-break")
+                h1SecondRight.classList.add("align-self-end")
+                h1SecondRight.classList.add(`${data.docId}`)
+                h1SecondRight.style.setProperty("background-color", "#EEEEEE")
+                h1SecondRight.style.setProperty("border", "1px solid black")
+                h1SecondRight.style.setProperty("border-radius", "1em")
+                h1SecondRight.style.setProperty("padding", "10px")
+                h1SecondRight.style.setProperty("font-size", "1rem")
+                h1SecondRight.innerText = data.body.toString()
+
+                document.querySelector("#inside").appendChild(h1SecondRight)
+            }
+            let scroll = document.querySelector("#inside");
+            scroll.scrollTop = scroll.scrollHeight - scroll.clientHeight;
+        }
+        else if (data.operation.toString() == "removed") {
+            const deletedNodes = document.querySelectorAll("." + data.docId)
+            for (let i = 0; i < deletedNodes.length; i++) {
+                deletedNodes[i].parentNode.removeChild(deletedNodes[i]);
+
+            }
+        }
+        else {
+            const updatedNodes = document.querySelectorAll("." + data.docId)
+            let found = false;
+            for (let i = 0; i < updatedNodes.length; i++) {
+
+                if (updatedNodes[i].localName == "p") {
+                    if (data.sender.toString() != updatedNodes[i].innerText) {
+                        updatedNodes[i].innerText = data.sender.toString()
+                        if (current != data.sender.toString()) {
+                            updatedNodes[i].classList.add("align-self-end")
+                            found = true
+                        }
+                        else {
+                            updatedNodes[i].classList.remove("align-self-end")
+                        }
+                    }
+                }
+                else {
+                    updatedNodes[i].innerText = data.body.toString()
+                    if (found) {
+                        updatedNodes[i].classList.add("align-self-end")
+                        updatedNodes[i].style.setProperty("background-color", "#EEEEEE")
+                    }
+                    else {
+                        updatedNodes[i].classList.remove("align-self-end")
+                        updatedNodes[i].style.setProperty("background-color", "#BCFFB9")
+                    }
+                }
+            }
+        }
+    });
+
+
+</script>
+
+</html>
